@@ -1,78 +1,78 @@
 import json
 import os
 
-# Data structure to store trips
-trips = []
+# Data structure to store pins
+pins = []
 current_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(current_dir, "trips.json")
+file_path = os.path.join(current_dir, "pins.json")
 
-def add_trip():
-    trip = {}
-    trip['location'] = input("Enter the name of the location: ")
-    trip['date'] = input("Enter the date (YYYY-MM-DD): ")
-    trip['rating'] = input("Rate your trip (1-5): ")
-    trip['review'] = input("Write a short review: ")
-    trips.append(trip)
-    print(f"Trip to {trip['location']} added successfully!\n")
-    save_trips()
+def add_pin():
+    pin = {}
+    pin['location'] = input("Enter the name of the location: ")
+    pin['date'] = input("Enter the date (YYYY-MM-DD): ")
+    pin['rating'] = input("Rate your pin (1-5): ")
+    pin['review'] = input("Write a short review: ")
+    pins.append(pin)
+    print(f"pin to {pin['location']} added successfully!\n")
+    save_pins()
 
-def show_trips():
-    if not trips:
-        print("No trips recorded yet.\n")
+def show_pins():
+    if not pins:
+        print("No pins recorded yet.\n")
     else:
-        for i, trip in enumerate(trips, 1):
-            print(f"{i}. {trip['location']} on {trip['date']}")
-            print(f"   Rating: {trip['rating']}")
-            print(f"   Review: {trip['review']}\n")
+        for i, pin in enumerate(pins, 1):
+            print(f"{i}. {pin['location']} on {pin['date']}")
+            print(f"   Rating: {pin['rating']}")
+            print(f"   Review: {pin['review']}\n")
 
-def save_trips():
+def save_pins():
     with open(file_path, 'w') as file:
-        json.dump(trips, file)
-    print("Trips saved to 'trips.json' file.\n")
+        json.dump(pins, file)
+    print("pins saved to 'pins.json' file.\n")
 
-def load_trips():
-    global trips
+def load_pins():
+    global pins
     try:
         with open(file_path, 'r') as file:
-            trips = json.load(file)
-        print("Trips loaded from 'trips.json'.\n")
+            pins = json.load(file)
+        print("pins loaded from 'pins.json'.\n")
     except FileNotFoundError:
-        print("No saved trips found.\n")
+        print("No saved pins found.\n")
 
-def delete_trip():
-    if not trips:
-        print("No trips to delete.\n")
+def delete_pin():
+    if not pins:
+        print("No pins to delete.\n")
     else:
-        show_trips()
+        show_pins()
         try:
-            index = int(input("Enter the number of the trip you want to delete: ")) - 1
-            if 0 <= index < len(trips):
-                deleted_trip = trips.pop(index)
-                print(f"Deleted trip to {deleted_trip['location']} on {deleted_trip['date']}.\n")
-                save_trips()
+            index = int(input("Enter the number of the pin you want to delete: ")) - 1
+            if 0 <= index < len(pins):
+                deleted_pin = pins.pop(index)
+                print(f"Deleted pin to {deleted_pin['location']} on {deleted_pin['date']}.\n")
+                save_pins()
             else:
                 print("Invalid number. Please try again.\n")
         except ValueError:
             print("Please enter a valid number.\n")
 
 def main():
-    load_trips()
+    load_pins()
     while True:
-        print("1. Add a new trip")
-        print("2. Show all trips")
-        print("3. Save trips")
-        print("4. Delete trip")
+        print("1. Add a new pin")
+        print("2. Show all pins")
+        print("3. Save pins")
+        print("4. Delete pin")
         print("5. Exit")
         choice = input("Enter your choice: ")
 
         if choice == '1':
-            add_trip()
+            add_pin()
         elif choice == '2':
-            show_trips()
+            show_pins()
         elif choice == '3':
-            save_trips()
+            save_pins()
         elif choice == '4':
-            delete_trip()
+            delete_pin()
         elif choice == '5':
             break
         else:

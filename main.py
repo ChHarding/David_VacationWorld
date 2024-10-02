@@ -1,6 +1,30 @@
-import json
-import os
 
+from dotenv import load_dotenv
+from urllib.parse import urlencode
+from flask import Flask, request, render_template
+import os
+load_dotenv()
+
+app = Flask("Trip Pin")
+
+@app.route("/")  
+def main_page():
+    html_str = render_template('index.html', title="Trip Pin") # title will be inlined in {{ title }}
+    return html_str  # give it to the browser to display the inline page
+
+@app.errorhandler(500)
+def page_not_found(error):
+    print(error) 
+    s = "Error with " + str(request.args["URL"]) + "<br>" + str(error)   
+    s = s + "<br>Hit the Back button and try something else ...)"
+    return s
+
+"""code to start server"""
+from socket import gethostname
+if 'liveweb' not in gethostname(): # all pythonanywhere servers have liveweb in their name
+    app.run(debug=False, port=8081)
+
+"""
 # Data structure to store pins
 pins = []
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -80,3 +104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""

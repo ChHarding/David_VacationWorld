@@ -199,6 +199,16 @@
         spinGlobe();
       });
 
+      map.addLayer({
+        id: "pins",
+        type: "symbol",
+        source: "pins",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-allow-overlap": true,
+        },
+      });
+
       spinGlobe();
     </script>
   </body>

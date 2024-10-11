@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TripPin - Pin Your Memories</title>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
     <link
       rel="stylesheet"
       href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
@@ -19,21 +17,13 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      #map {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
-      }
-    </style>
   </head>
   <body>
     <div id="map"></div>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <script src="https://api.mapbox.com/search-js/v1.0.0-beta.22/web.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-animated-popup@latest/dist/mapbox-gl-animated-popup.min.js"></script>
     <script>
       var mapboxapi = "{{ MAPBOX_API_KEY }}";
       mapboxgl.accessToken = mapboxapi;
@@ -45,37 +35,55 @@
       });
       map.addControl(new mapboxgl.NavigationControl());
 
-      const geocoder = new MapboxGeocoder({
+      const searchJS = document.getElementById("search-js");
+      const searchBox = new MapboxSearchBox({
         accessToken: mapboxgl.accessToken,
+        options: {
+          types: "address,poi",
+          proximity: [-73.99209, 40.68933],
+        },
+        marker: true,
         mapboxgl: mapboxgl,
-        marker: false,
-        placeholder: "Search for places",
       });
 
-      // Add navigation controls
-      map.addControl(geocoder);
+      map.addControl(searchBox);
 
       // Store all markers in an array
       let markers = [];
 
       // Function to add a pin
       function addPin(lng, lat, title) {
-        const marker = new mapboxgl.Marker({
-          draggable: true,
-        })
-          .setLngLat([lng, lat])
-          .addTo(map);
-
         const popupContent = `
           <h3>${title}</h3>
           <button onclick="editPinName(${markers.length})">Edit</button>
           <button onclick="deletePin(${markers.length})">Delete</button>
       `;
 
-        const popup = new mapboxgl.Popup().setHTML(popupContent);
-        marker.setPopup(popup);
+        const popup = new AnimatedPopup({
+          offset: 25,
+          openingAnimation: {
+            duration: 1000,
+            easing: "easeOutElastic",
+            transform: "scale",
+          },
+          closingAnimation: {
+            duration: 300,
+            easing: "easeInBack",
+            transform: "scale",
+          },
+        }).setHTML(popupContent);
+
+        //const popup = new mapboxgl.Popup().setHTML(popupContent);
+        const marker = new mapboxgl.Marker({
+          color: "#FF0000",
+          draggable: false,
+        })
+          .setLngLat([lng, lat])
+          .setPopup(popup)
+          .addTo(map);
 
         markers.push({ marker, title });
+        marker.togglePopup();
         return marker;
       }
 
@@ -121,7 +129,7 @@
       });
 
       // function to search for a location, fly to it and create pin
-      geocoder.on("result", function (e) {
+      searchBox.on("result", function (e) {
         const coordinates = e.result.center;
         const placeName = e.result.place_name;
 
@@ -152,6 +160,7 @@
       let userInteracting = false;
       let spinEnabled = true;
 
+      //function to spin globe
       function spinGlobe() {
         const zoom = map.getZoom();
         if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
@@ -169,6 +178,7 @@
         }
       }
 
+      //stop map from rotating when user is holding down mouse button
       map.on("mousedown", () => {
         userInteracting = true;
       });
@@ -211,5 +221,10 @@
 
       spinGlobe();
     </script>
+
+    <!--<script
+      type="text/javascript"
+      src="{{ url_for('static', filename = 'js/index.js') }}"
+    ></script> -->
   </body>
 </html>

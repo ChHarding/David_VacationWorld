@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/DavidTangJK/David_TripPin/issues"
   },
-  "homepage": "https://github.com/DavidTangJK/David_TripPin#readme"
+  "homepage": "https://github.com/DavidTangJK/David_TripPin#readme",
+  "dependencies": {
+    "@mapbox/search-js-web": "^1.0.0-beta.22"
+  }
 }

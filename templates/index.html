@@ -20,6 +20,14 @@
   </head>
   <body>
     <div id="map"></div>
+    <div id="map-overlay">
+      <button id="zoom">Zoom In</button>
+    </div>
+    <div id="itinerary">
+      <h3>Trip Itinerary</h3>
+      <ul id="itinerary-list"></ul>
+      <button id="clear-itinerary">Clear Itinerary</button>
+    </div>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
     <script src="https://api.mapbox.com/search-js/v1.0.0-beta.22/web.js"></script>
@@ -35,17 +43,14 @@
       });
       map.addControl(new mapboxgl.NavigationControl());
 
-      const searchJS = document.getElementById("search-js");
-      const searchBox = new MapboxSearchBox({
-        accessToken: mapboxgl.accessToken,
-        options: {
-          types: "address,poi",
-          proximity: [-73.99209, 40.68933],
-        },
-        marker: true,
-        mapboxgl: mapboxgl,
-      });
-
+      const searchBox = new mapboxsearch.MapboxSearchBox();
+      searchBox.accessToken = mapboxapi;
+      searchBox.options = {
+        types: "address,poi",
+        proximity: [0, 0],
+      };
+      searchBox.marker = true;
+      searchBox.mapboxgl = mapboxgl;
       map.addControl(searchBox);
 
       // Store all markers in an array
@@ -76,7 +81,7 @@
         //const popup = new mapboxgl.Popup().setHTML(popupContent);
         const marker = new mapboxgl.Marker({
           color: "#FF0000",
-          draggable: false,
+          draggable: true,
         })
           .setLngLat([lng, lat])
           .setPopup(popup)
@@ -128,29 +133,16 @@
         addPin(139.6917, 35.6895, "Tokyo");
       });
 
-      // function to search for a location, fly to it and create pin
-      searchBox.on("result", function (e) {
-        const coordinates = e.result.center;
-        const placeName = e.result.place_name;
-
-        // Add a pin for the selected location
-        addPin(coordinates[0], coordinates[1], placeName);
-
-        // Fly to the selected location
-        map.flyTo({
-          center: coordinates,
-          zoom: 14,
-        });
-      });
-
       // Add click event to add new pins
       map.on("click", (e) => {
         const title = prompt("Enter a name for this location:");
         if (title) {
           addPin(e.lngLat.lng, e.lngLat.lat, title);
+          addToItinerary(e.lngLat.lng, e.lngLat.lat, title);
         }
       });
 
+      // Spin variables
       const secondsPerRevolution = 120;
       // Above zoom level 5, do not rotate.
       const maxSpinZoom = 5;
@@ -209,6 +201,7 @@
         spinGlobe();
       });
 
+      /* Remove likely: function to add text overlay for getting function
       map.addLayer({
         id: "pins",
         type: "symbol",
@@ -218,8 +211,52 @@
           "text-allow-overlap": true,
         },
       });
-
+      */
       spinGlobe();
+
+      document.getElementById("zoom").addEventListener("click", () => {
+        const zoom = document.getElementById("zoom");
+        const zoomText = zoom.textContent;
+        if (zoomText === "Zoom In") {
+          document.querySelector("#zoom").textContent = "Zoom Out";
+          map.zoomTo(10, {
+            duration: 2500,
+          });
+        } else if (zoomText === "Zoom Out") {
+          document.querySelector("#zoom").textContent = "Zoom In";
+          map.zoomTo(2, {
+            duration: 2500,
+          });
+        } else {
+          console.log("Error with zoom");
+        }
+      });
+
+      let itinerary = [];
+
+      function addToItinerary(lng, lat, title) {
+        itinerary.push({ lng, lat, title });
+        updateItineraryDisplay();
+      }
+
+      function updateItineraryDisplay() {
+        const list = document.getElementById("itinerary-list");
+        list.innerHTML = "";
+        itinerary.forEach((item, index) => {
+          const li = document.createElement("li");
+          li.textContent = `${index + 1}. ${item.title}`;
+          list.appendChild(li);
+        });
+      }
+
+      function clearItinerary() {
+        itinerary = [];
+        updateItineraryDisplay();
+      }
+
+      document
+        .getElementById("clear-itinerary")
+        .addEventListener("click", clearItinerary);
     </script>
 
     <!--<script

@@ -27,6 +27,12 @@
       <h3>Trip Itinerary</h3>
       <ul id="itinerary-list"></ul>
       <button id="clear-itinerary">Clear Itinerary</button>
+      <button id="save-itinerary" onclick="saveItinerary()">
+        Save Itinerary
+      </button>
+      <button id="load-itinerary" onclick="loadItinerary()">
+        Load Itinerary
+      </button>
     </div>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
@@ -62,6 +68,7 @@
           <h3>${title}</h3>
           <button onclick="editPinName(${markers.length})">Edit</button>
           <button onclick="deletePin(${markers.length})">Delete</button>
+          <button onclick="addToItinerary(${lng}, ${lat}, '${title}')">Add to Itinerary</button>
       `;
 
         const popup = new AnimatedPopup({
@@ -201,17 +208,6 @@
         spinGlobe();
       });
 
-      /* Remove likely: function to add text overlay for getting function
-      map.addLayer({
-        id: "pins",
-        type: "symbol",
-        source: "pins",
-        layout: {
-          "text-field": ["get", "name"],
-          "text-allow-overlap": true,
-        },
-      });
-      */
       spinGlobe();
 
       document.getElementById("zoom").addEventListener("click", () => {
@@ -257,6 +253,30 @@
       document
         .getElementById("clear-itinerary")
         .addEventListener("click", clearItinerary);
+
+      function saveItinerary() {
+        fetch("/save_itinerary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(itinerary),
+        })
+          .then((response) => response.json())
+          .then((data) => console.log("Itinerary saved:", data));
+      }
+
+      function loadItinerary() {
+        fetch("/load_itinerary")
+          .then((response) => response.json())
+          .then((data) => {
+            itinerary = data;
+            updateItineraryDisplay();
+          });
+      }
+
+      // Call loadItinerary when the page loads
+      document.addEventListener("DOMContentLoaded", loadItinerary);
     </script>
 
     <!--<script

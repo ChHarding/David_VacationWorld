@@ -34,6 +34,7 @@
         Load Itinerary
       </button>
     </div>
+
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
     <script src="https://api.mapbox.com/search-js/v1.0.0-beta.22/web.js"></script>
@@ -145,7 +146,7 @@
         const title = prompt("Enter a name for this location:");
         if (title) {
           addPin(e.lngLat.lng, e.lngLat.lat, title);
-          addToItinerary(e.lngLat.lng, e.lngLat.lat, title);
+          //addToItinerary(e.lngLat.lng, e.lngLat.lat, title);
         }
       });
 
@@ -277,6 +278,43 @@
 
       // Call loadItinerary when the page loads
       document.addEventListener("DOMContentLoaded", loadItinerary);
+      // Create a new itinerary
+      function createItinerary(name) {
+        fetch("/itinerary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: name }),
+        })
+          .then((response) => response.json())
+          .then((data) => console.log(data))
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Delete an itinerary
+      function deleteItinerary(itineraryId) {
+        fetch(`/itinerary/${itineraryId}`, {
+          method: "DELETE",
+        })
+          .then((response) => response.json())
+          .then((data) => console.log(data))
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Edit an itinerary
+      function editItinerary(itineraryId, newName) {
+        fetch(`/itinerary/${itineraryId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: newName }),
+        })
+          .then((response) => response.json())
+          .then((data) => console.log(data))
+          .catch((error) => console.error("Error:", error));
+      }
     </script>
 
     <!--<script

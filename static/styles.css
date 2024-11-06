@@ -33,17 +33,35 @@ body {
 
 #zoom {
   display: block;
-  position: relative;
-  top: 50%;
-  right: 0;
+  position: absolute;
+  top: 150px;
+  right: 10px;
   margin: 0px auto;
-  width: 10%;
+  width: 8%;
   height: 40px;
   padding: 10px;
   border: none;
   border-radius: 3px;
   font-size: 12px;
   text-align: center;
-  color: #fff;
-  background: #ee8a65;
+  color: #000000;
+  background: #fff;
+}
+
+#itinerary {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 250px;
+}
+#itinerary-list {
+  list-style-type: none;
+  padding: 0;
+}
+#itinerary-list li {
+  margin-bottom: 5px;
 }

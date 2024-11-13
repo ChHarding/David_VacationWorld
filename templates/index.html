@@ -23,6 +23,17 @@
     <div id="map-overlay">
       <button id="zoom">Zoom In</button>
     </div>
+    <div id="itinerary-panel">
+      <h2>Itineraries</h2>
+      <div id="itinerary-list"></div>
+      <h3>Create New Itinerary</h3>
+      <input
+        type="text"
+        id="new-itinerary-name"
+        placeholder="Enter itinerary name"
+      />
+      <button onclick="createItinerary()">Create Itinerary</button>
+    </div>
     <div id="itinerary">
       <h3>Trip Itinerary</h3>
       <ul id="itinerary-list"></ul>
@@ -279,7 +290,8 @@
       // Call loadItinerary when the page loads
       document.addEventListener("DOMContentLoaded", loadItinerary);
       // Create a new itinerary
-      function createItinerary(name) {
+      function createItinerary() {
+        const name = document.getElementById("new-itinerary-name").value;
         fetch("/itinerary", {
           method: "POST",
           headers: {
@@ -288,7 +300,13 @@
           body: JSON.stringify({ name: name }),
         })
           .then((response) => response.json())
-          .then((data) => console.log(data))
+          .then((data) => {
+            if (data.id) {
+              itineraries.push({ id: data.id, name: name, locations: [] });
+              updateItineraryList();
+              document.getElementById("new-itinerary-name").value = "";
+            }
+          })
           .catch((error) => console.error("Error:", error));
       }
 
@@ -315,6 +333,29 @@
           .then((data) => console.log(data))
           .catch((error) => console.error("Error:", error));
       }
+
+      function updateItineraryList() {
+        const itineraryList = document.getElementById("itinerary-list");
+        itineraryList.innerHTML = "";
+        itineraries.forEach((itinerary) => {
+          const itineraryItem = document.createElement("div");
+          itineraryItem.className = "itinerary-item";
+          itineraryItem.innerHTML = `
+                    <h4>${itinerary.name}</h4>
+                    <button onclick="editItinerary(${itinerary.id})">Edit</button>
+                    <button onclick="deleteItinerary(${itinerary.id})">Delete</button>
+                `;
+          itineraryList.appendChild(itineraryItem);
+        });
+      }
+
+      // Load existing itineraries when the page loads
+      fetch("/itineraries")
+        .then((response) => response.json())
+        .then((data) => {
+          itineraries = data;
+          updateItineraryList();
+        });
     </script>
 
     <!--<script

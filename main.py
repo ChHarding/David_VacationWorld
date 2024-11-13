@@ -35,15 +35,14 @@ itinerary = []
 class Itinerary(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, nullable=False)  # Assuming you have user authentication
+    """user_id = db.Column(db.Integer, nullable=False)  # Assuming you have user authentication"""
     place = db.Column(db.String(100), nullable=False)
 
-    def __init__(self, name, user_id, place):
+    def __init__(self, name):
         self.name = name
-        self.user_id = user_id
-        self.place = place
+        """self.user_id = user_id"""
 
-@app.route("/")  
+@app.route("/") 
 def main_page():
     html_str = render_template('index.html', title="Trip Pin", MAPBOX_API_KEY = MAPBOX_API_KEY) # title will be inlined in {{ title }}
     return html_str  # give it to the browser to display the inline page
@@ -80,7 +79,7 @@ def logout():
         flash("You have been logged out!, {user}")
     session.pop("user", None)
     return redirect(url_for("login"))
-
+"""
 @app.route('/create/', methods=('GET', 'POST'))
 def create():
     if request.method == 'POST':
@@ -106,7 +105,7 @@ def add_location():
     else:
         flash('Location cannot be empty!')
     return redirect(url_for('index'))
- 
+ """
 
 @app.route("/save_itinerary", methods=['POST'])
 def save_itinerary():
@@ -125,14 +124,14 @@ def load_itinerary():
 
 @app.route('/itinerary', methods=['POST'])
 def create_itinerary():
-    if 'user_id' not in session:
+    """if 'user_id' not in session:
         return jsonify({"error": "User not logged in"}), 401
-    
+    """
     name = request.json.get('name')
     if not name:
         return jsonify({"error": "Itinerary name is required"}), 400
     
-    new_itinerary = Itinerary(name=name, user_id=session['user_id'])
+    new_itinerary = Itinerary(name=name)
     db.session.add(new_itinerary)
     db.session.commit()
     
@@ -178,7 +177,10 @@ def create_app():
 
     return app
 
-"""code to start server"""
+"""code to start server
 from socket import gethostname
-if 'liveweb' not in gethostname(): # all pythonanywhere servers have liveweb in their name
-    app.run(debug=False, port=8081)
+if 'liveweb' not in gethostname(): # all pythonanywhere servers have liveweb in their name"""
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, port=8081)

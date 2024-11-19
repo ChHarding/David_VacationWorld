@@ -71,8 +71,9 @@
       searchBox.mapboxgl = mapboxgl;
       map.addControl(searchBox);
 
-      // Store all markers in an array
+      // Store all markers and itineraries in an array
       let markers = [];
+      let itineraries = [];
 
       // Function to add a pin
       function addPin(lng, lat, title) {
@@ -357,10 +358,5 @@
           updateItineraryList();
         });
     </script>
-
-    <!--<script
-      type="text/javascript"
-      src="{{ url_for('static', filename = 'js/index.js') }}"
-    ></script> -->
   </body>
 </html>

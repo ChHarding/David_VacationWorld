@@ -45,7 +45,6 @@
         Load Itinerary
       </button>
     </div>
-
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
     <script src="https://api.mapbox.com/search-js/v1.0.0-beta.22/web.js"></script>
@@ -108,6 +107,19 @@
           .addTo(map);
 
         markers.push({ marker, title });
+
+        fetch("/places", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: title, longitude: lng, latitude: lat }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Place saved:", data);
+          })
+          .catch((error) => console.error("Error:", error));
         marker.togglePopup();
         return marker;
       }
@@ -144,6 +156,7 @@
             marker.marker.getPopup().setHTML(popupContent);
           });
         }
+        marker.togglePopup();
       }
 
       // Example: Add some sample pins
@@ -348,6 +361,44 @@
                 `;
           itineraryList.appendChild(itineraryItem);
         });
+      }
+
+      function deletePin(placeId) {
+        fetch(`/places/${placeId}`, {
+          method: "DELETE",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Place deleted:", data);
+            // Optionally remove the marker from the map or update the UI
+            markers = markers.filter((marker) => marker.id !== placeId);
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      function editPin(placeId, newTitle, newLng, newLat) {
+        fetch(`/places/${placeId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: newTitle,
+            longitude: newLng,
+            latitude: newLat,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Place updated:", data);
+            // Optionally update the marker on the map or UI
+            const marker = markers.find((marker) => marker.id === placeId);
+            if (marker) {
+              marker.title = newTitle;
+              marker.marker.setLngLat([newLng, newLat]);
+            }
+          })
+          .catch((error) => console.error("Error:", error));
       }
 
       // Load existing itineraries when the page loads

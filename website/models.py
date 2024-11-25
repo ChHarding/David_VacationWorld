@@ -6,15 +6,17 @@ class Place(db.Model):
     __tablename__ = 'places'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(1000), nullable=False)
-    address = db.Column(db.String(5000), nullable=False)
-    itinerary_id = db.Column(db.Integer, db.ForeignKey('itinerary.id'), nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    rating = db.Column(db.Integer, nullable=True)
+    review = db.Column(db.String(50000), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 class Itinerary(db.Model):
     __tablename__ = 'itinerary'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(1000))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    places = db.relationship('Place')
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -24,3 +26,4 @@ class User(db.Model, UserMixin):
     first_name = db.Column(db.String(150), nullable=False)
     last_name = db.Column(db.String(150), nullable=False)
     itineraries = db.relationship('Itinerary')
+    places = db.relationship('Place')

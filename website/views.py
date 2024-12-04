@@ -12,32 +12,24 @@ MAPBOX_API_KEY = os.getenv("MAPBOX_API")
 views = Blueprint('views', __name__)
 
 
-@views.route('/', methods=['GET', 'POST'])
+@views.route('/', methods=['GET'])
 @login_required
 def main_page():
+    """
     if request.method == 'POST': 
         data = request.form.get('data')
+    """
     html_str = render_template('main_page.html', title="Trip Pin", MAPBOX_API_KEY = MAPBOX_API_KEY) # title will be inlined in {{ title }}
     return html_str
 
-@views.route("/save_itinerary", methods=['POST'])
-def save_itinerary():
-    itinerary = request.json
-    # Here you would typically save the itinerary to a database
-    # For now, we'll just store it in the session
-    session['itinerary'] = itinerary
-    return jsonify({"status": "success"})
-
-@views.route("/load_itinerary")
-def load_itinerary():
-    # Here you would typically load the itinerary from a database
-    # For now, we'll just retrieve it from the session
-    itinerary = session.get('itinerary', [])
-    return jsonify(itinerary)
-
-
-@views.route('/itinerary', methods=['POST'])
+@views.route('/itinerary', methods=['GET','POST'])
 def create_itinerary():
+    if request.method == 'GET':
+        itineraries = Itinerary.query.all()
+        return jsonify([{
+            "id": itinerary.id,
+            "name": itinerary.name
+        } for itinerary in itineraries])
     name = request.json.get('name')
     if not name:
         return jsonify({"error": "Itinerary name is required"}), 400
@@ -77,28 +69,43 @@ def edit_itinerary(itinerary_id):
 @views.route('/places', methods=['GET','POST'])
 def create_place():
     if request.method == 'GET':
-        data = request.form.get('places')
+        places = Place.query.all()
+        return jsonify([{
+            "id": place.id,
+            "name": place.name,
+            "longitude": place.longitude,
+            "latitude": place.latitude,
+            "rating": place.rating,
+            "review": place.review
+        } for place in places])
+
     data = request.json
     name = data.get('name')
     longitude = data.get('longitude')
     latitude = data.get('latitude')
-    if not name:
-        return jsonify({"error": "Place name is required"}), 400
+    rating = data.get('rating')
+    review = data.get('review')
     
     if not name or longitude is None or latitude is None:
-        return jsonify({"error": "Place name and coordinates are required"}), 400
+        return jsonify({"error": "Pin name and coordinates are required"}), 400
+
+    place_exists = db.session.query(Place).filter_by(longitude = longitude, latitude = latitude).first()
 
     new_place = Place(
-        name=name,
-        longitude=longitude,
-        latitude=latitude,
-        user_id=current_user.id,
+            name=name,
+            longitude=longitude,
+            latitude=latitude,
+            rating=rating,
+            review=review,
+            user_id=current_user.id,
     )
-    
-    db.session.add(new_place)
-    db.session.commit()
-    
-    return jsonify({"message": "Place created", "id": new_place.id}), 201
+    if place_exists:
+        return("Place already exists");
+    else:
+        db.session.add(new_place)
+        db.session.commit()
+        return jsonify({"message": "Place created", "id": new_place.id}), 201
+
 
 @views.route('/places/<place_id>', methods=['DELETE'])
 def delete_place(place_id):
@@ -125,11 +132,30 @@ def edit_place(place_id):
     # Optionally update other fields like longitude and latitude if needed
     new_longitude = request.json.get('longitude')
     new_latitude = request.json.get('latitude')
+    new_rating = request.json.get('rating')
+    new_review = request.json.get('review')
     
     if new_longitude is not None:
         place.longitude = new_longitude
     if new_latitude is not None:
         place.latitude = new_latitude
+    if new_rating is not None:
+        place.rating = new_rating
+    if new_review is not None:
+        place.review = new_review
 
     db.session.commit()
     return jsonify({"message": "Place updated", "id": place.id}), 200
+
+@views.route('/user_places', methods=['GET'])
+@login_required
+def get_user_places():
+    places = Place.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        "id": place.id,
+        "name": place.name,
+        "longitude": place.longitude,
+        "latitude": place.latitude,
+        "rating": place.rating,
+        "review": place.review
+    } for place in places])

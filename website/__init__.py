@@ -2,7 +2,6 @@ from flask import Flask, request, render_template, session, url_for, redirect, j
 from flask_sqlalchemy import SQLAlchemy
 from os import path
 from flask_login import LoginManager
-from flask_session import Session
 from datetime import timedelta
 from dotenv import load_dotenv
 

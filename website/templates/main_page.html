@@ -26,7 +26,9 @@
     </div>
     <div id="itinerary-panel">
       <h2>Itineraries</h2>
-      <div id="itinerary-list"></div>
+      <div id="itinerary-list">
+        <div id="pins-list"></div>
+      </div>
       <h3>Create New Itinerary</h3>
       <input
         type="text"
@@ -107,12 +109,13 @@
             } else {
               console.log("Place saved:", data);
               const popupContent = `
-                    <h3>${title}</h3>
-                    <p>Rating: ${rating}/5</p>
-                    <p>Review: ${review}</p>
-                    <button onclick="editPin(${data.id})">Edit</button>
-                    <button onclick="deletePin(${data.id})">Delete</button>
-              `;
+                        <h3>${title}</h3>
+                        <p>Rating: ${rating}/5</p>
+                        <p>Review: ${review}</p>
+                        <button onclick="editPin(${data.id})">Edit</button>
+                        <button onclick="deletePin(${data.id})">Delete</button>
+                        <button onclick="addToItinerary(${data.id})">Add To Itinerary</button>
+                  `;
               popup.setHTML(popupContent);
               // Add marker to map and update UI
               const marker = new mapboxgl.Marker({
@@ -277,7 +280,7 @@
       });
 
       let itinerary = [];
-      //functions for the top trip itinerary, expected to be removed
+
       function addToItinerary(lng, lat, title) {
         itinerary.push({ lng, lat, title });
         updateItineraryDisplay();
@@ -332,6 +335,22 @@
           .catch((error) => console.error("Error:", error));
       }
 
+      function addToItinerary(placeId) {
+        const itineraryName = prompt(
+          "Enter the itinerary name to add this place to:"
+        );
+        fetch(`/itinerary/${itineraryName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ placeId: placeId }),
+        })
+          .then((response) => response.json())
+          .then((data) => updateItineraryList())
+          .catch((error) => console.error("Error:", error));
+      }
+
       function updateItineraryList() {
         fetch("/itinerary", {
           method: "GET",
@@ -342,15 +361,34 @@
           .then((response) => response.json())
           .then((itineraries) => {
             const itineraryList = document.getElementById("itinerary-list");
+            const pinsList = document.getElementById("pins-list");
             itineraryList.innerHTML = "";
+
             itineraries.forEach((itinerary) => {
               const itineraryItem = document.createElement("div");
               itineraryItem.className = "itinerary-item";
               itineraryItem.innerHTML = `
-                    <h4>${itinerary.name}</h4>
-                    <button onclick="edit_itinerary(${itinerary.id})">Edit</button>
-                    <button onclick="delete_itinerary(${itinerary.id})">Delete</button>
-                `;
+                        <h4>${itinerary.name}</h4>
+                        <h4>Pins:</h4>
+                        <ul>
+                    ${itinerary.place
+                      .map(
+                        (place) => `
+                        <li>
+                            ${place.name}
+                        </li>
+                    `
+                      )
+                      .join("")}
+                </ul>
+            
+                        <button onclick="edit_itinerary(${
+                          itinerary.id
+                        })">Edit</button>
+                        <button onclick="delete_itinerary(${
+                          itinerary.id
+                        })">Delete</button>
+                    `;
               itineraryList.appendChild(itineraryItem);
             });
           })
@@ -381,13 +419,14 @@
                 },
               });
               const popupContent = `
-                <h3>${place.name}</h3>
-                <p>Coordinates: ${place.longitude}, ${place.latitude}</p>
-                <p>Rating: ${place.rating}/5</p>
-                <p>Review: ${place.review}</p>
-                <button onclick="editPin(${place.id})">Edit</button>
-                <button onclick="deletePin(${place.id})">Delete</button>
-            `;
+                    <h3>${place.name}</h3>
+                    <p>Coordinates: ${place.longitude}, ${place.latitude}</p>
+                    <p>Rating: ${place.rating}/5</p>
+                    <p>Review: ${place.review}</p>
+                    <button onclick="editPin(${place.id})">Edit</button>
+                    <button onclick="deletePin(${place.id})">Delete</button>
+                    <button onclick="addToItinerary(${place.id})">Add To Itinerary</button>
+                `;
               popup.setHTML(popupContent);
               // Add marker to map and update UI
               const marker = new mapboxgl.Marker({

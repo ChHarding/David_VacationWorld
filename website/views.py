@@ -25,10 +25,18 @@ def main_page():
 @views.route('/itinerary', methods=['GET','POST'])
 def create_itinerary():
     if request.method == 'GET':
-        itineraries = Itinerary.query.all()
+        itineraries = Itinerary.query.filter_by(user_id=current_user.id).all()
         return jsonify([{
             "id": itinerary.id,
-            "name": itinerary.name
+            "name": itinerary.name,
+            "place": [{
+                "id": place.id,
+                "name": place.name,
+                "longitude": place.longitude,
+                "latitude": place.latitude,
+                "rating": place.rating,
+                "review": place.review
+            } for place in itinerary.places]
         } for itinerary in itineraries])
     name = request.json.get('name')
     if not name:
@@ -40,6 +48,22 @@ def create_itinerary():
     
     return jsonify({"message": "Itinerary created", "id": new_itinerary.id}), 201
 
+@views.route('/itinerary/<itinerary_name>', methods=['POST'])
+def add_pins_to_itinerary(itinerary_name):
+    itinerary = Itinerary.query.filter_by(name=itinerary_name).first()
+    if not itinerary:
+        return jsonify({"error": "Itinerary not found or unauthorized"}), 404
+    
+    placeId = request.json.get('placeId')
+    place = Place.query.get(placeId)
+    if not place:
+        return jsonify({"error": "Pin not found"}), 404
+    itinerary.places.append(place)
+    
+    db.session.commit()
+    
+    return jsonify({"message": "Pins added to itinerary", "id": itinerary.id}), 200
+    
 @views.route('/itinerary/<itinerary_id>', methods=['DELETE'])
 def delete_itinerary(itinerary_id):
     itinerary = Itinerary.query.get(itinerary_id)

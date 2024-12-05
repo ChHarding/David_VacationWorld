@@ -73,15 +73,22 @@ body {
   margin-bottom: 5px;
 }
 
+#pins-list {
+  list-style-type: none;
+  padding: 0;
+}
+#pins-list li {
+  margin-bottom: 5px;
+}
+
 #itinerary-panel {
   position: absolute;
   top: 10px;
   left: 10px;
   width: 15%;
-  height: 35%;
+  height: 90%;
   background: white;
   padding: 20px;
-  overflow-y: auto;
 }
 .itinerary-item {
   margin-bottom: 10px;

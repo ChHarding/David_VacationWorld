@@ -11,11 +11,13 @@ class Place(db.Model):
     rating = db.Column(db.Integer, nullable=True)
     review = db.Column(db.String(50000), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    itinerary_id = db.Column(db.Integer, db.ForeignKey('itinerary.id'), nullable=True)
 
 class Itinerary(db.Model):
     __tablename__ = 'itinerary'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(1000))
+    places = db.relationship('Place')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 class User(db.Model, UserMixin):

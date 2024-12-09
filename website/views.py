@@ -42,16 +42,19 @@ def create_itinerary():
     if not name:
         return jsonify({"error": "Itinerary name is required"}), 400
     
-    new_itinerary = Itinerary(name=name, user_id=current_user.id)
-    db.session.add(new_itinerary)
-    db.session.commit()
-    
-    return jsonify({"message": "Itinerary created", "id": new_itinerary.id}), 201
+    itinerary_exists = db.session.query(Itinerary).filter_by(name=name).first()
+    if itinerary_exists:
+        return jsonify({"error": "Itinerary already exists"}), 404
+    else:
+        new_itinerary = Itinerary(name=name, user_id=current_user.id)
+        db.session.add(new_itinerary)
+        db.session.commit()
+        return jsonify({"message": "Itinerary created", "id": new_itinerary.id}), 201
 
 @views.route('/itinerary/<itinerary_name>', methods=['POST'])
 def add_pins_to_itinerary(itinerary_name):
     itinerary = Itinerary.query.filter_by(name=itinerary_name).first()
-    if not itinerary:
+    if itinerary == None:
         return jsonify({"error": "Itinerary not found or unauthorized"}), 404
     
     placeId = request.json.get('placeId')

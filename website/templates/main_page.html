@@ -98,12 +98,14 @@
       // Function to add a pin
       function add_pin(lng, lat, title, rating, review) {
         if (rating == null || review == null) {
-          rating = prompt("Enter a rating for this place (1-5): ");
+          rating = parseInt(prompt("Enter a rating for this place (1-5): "));
+          if (rating > 5 || rating < 1 || rating.isNaN) {
+            alert(
+              "Error: Please enter a number between 1 and 5 for the rating"
+            );
+            return;
+          }
           review = prompt("Enter a review for this place: ");
-        }
-        if (newRating > 5 || newRating < 1 || !newRating.isdigit()) {
-          alert("Error: Please enter a number between 1 and 5 for the rating");
-          return;
         }
 
         fetch("/places", {
@@ -150,17 +152,29 @@
 
       // Function to edit pin name
       function edit_pin(placeId) {
-        const newTitle = prompt("Enter new name for this location:");
-        const newRating = prompt("Enter a new rating (1-5):");
-        const newReview = prompt("Enter a new review:");
-        if (newTitle == null) {
-          alert("Error: Please enter a name for this location");
+        newTitle = prompt("Enter new name for this location:");
+        if (newTitle == null || newTitle == "") {
+          alert("Error: Please enter a name for the location");
           return;
         }
-        if (newRating > 5 || newRating < 1 || !newRating.isdigit()) {
-          alert("Error: Please enter a number between 1 and 5 for the rating");
-          return;
+        newRating = prompt("Enter a new rating (1-5):");
+        Nested_if: if (newRating == null || newRating == "") {
+          newRating = "";
+          break Nested_if;
+          if (
+            parseInt(newRating) > 5 ||
+            parseInt(newRating) < 1 ||
+            Number.isNaN(parseInt(newRating))
+          ) {
+            alert(
+              "Error: Please enter a number between 1 and 5 for the rating"
+            );
+            return;
+          }
         }
+
+        newReview = prompt("Enter a new review:");
+
         fetch(`/places/${placeId}`, {
           method: "PUT",
           headers: {
@@ -168,7 +182,7 @@
           },
           body: JSON.stringify({
             name: newTitle,
-            rating: parseInt(newRating),
+            rating: newRating,
             review: newReview,
           }),
         })
@@ -343,7 +357,10 @@
       // Edit an itinerary
       function edit_itinerary(itineraryId) {
         const newName = prompt("Enter a new name for this itinerary:");
-        if (!newName) alert("Error: Please enter a name for the itinerary");
+        if (!newName) {
+          alert("Error: Please enter a name for the itinerary");
+          return;
+        }
         fetch(`/itinerary/${itineraryId}`, {
           method: "PUT",
           headers: {

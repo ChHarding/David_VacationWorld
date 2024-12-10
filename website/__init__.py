@@ -12,6 +12,13 @@ DB_NAME = "database.db"
 
 
 def create_app():
+    """
+    Create and configure the Flask application.
+    This function sets up the Flask application with necessary configurations,
+    initializes the database, registers blueprints, and sets up the login manager.
+    Returns:
+        Flask: The configured Flask application instance.
+    """
     app = Flask(__name__)
     app.permanent_session_lifetime = timedelta(days=5)
     app.config['SECRET_KEY'] = 'your_secret_key'
@@ -44,6 +51,15 @@ def create_app():
 
 
 def create_database(app):
+    """
+    Creates a database if it does not already exist.
+
+    Args:
+        app: The Flask application database instance.
+
+    Returns:
+        None
+    """
     if not path.exists('website/' + DB_NAME):
         db.create_all(app=app)
         print('Created Database!')

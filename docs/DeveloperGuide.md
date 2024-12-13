@@ -47,36 +47,27 @@ The last thing that needs to be mentioned here about __init__.py is the usage of
 As initialization is finished and the user accesses the website (assuming this is their first time or they are not logged in), they should be greeted by the login screen. There is a base.html that houses most of the styles of the login/signup pages, which are using Bootstrap styles. Another thing that is contained in the base.html is the template for the flash messages. These messages would be taken from auth.py. They could either be successful or failed messages such as 'Incorrect password, try again.' or 'Logged in successfully!'
 
 #### login.html, sign_up.html, auth.py
-When user auth.py handles login and signup logic.
-3. User model in models.py is used to create and query user data.
-4. Flask-Login manages user sessions.  
+auth.py handles login and signup logic. When a user first gets to the login page, it has a route of /login, with a get and post method. The get method will render the login.html on the screen and prompt the user to log in. Once the user enters the data, the post method is triggered and sends the info to auth.py. auth.py will be connected to the database and check if the user information that is entered matches the data in the database with the code. ```User.query.filter_by(email=email).first()``` Messages will be flashed if there is an error/success during the login process.
 
+This would be the same process and logic for the sign-up. The only caveat is that there are a couple of sign-up requirements, such as "Email must be greater than 3 characters", "First name must be greater than 1 character", "Password must be at least 8 characters," and so on. Once the user enters all the necessary information following the requirements, the info will be entered into the database, and the user will be redirected to the main page.
 
-### Main Page Interaction
-1. After authentication, user is directed to main_page.html.
-2. Mapbox API is initialized with the user's API key.
-3. views.py handles routes for fetching and manipulating data.  
+### Main function
+#### main_page.html
+The user will be greeted with the main_page after signing up/logging in. The map divs are taken from Mapbox examples code of displaying the map, make sure the styles and scripts are included from Mapbox. You will also see the Mapbox API key in the HTML, which is required to use the map assets provided by Mapbox. Half of the HTML contains code from the documentation for Mapbox, including map controls and settings, the search box to search for locations, pin information, the function for spinning the globe, and so on. The other half of the code contains functions dealing with pins (adding, editing, deleting), itineraries (creating, editing, deleting), and loading pins and itineraries onto the page according to the database. These functions will fetch user input/clicks and will be sent to views.py for further processing. After views.py processes, usually, it will send the results/error messages back to the client.
 
+#### views.py
+Views.py is where the magic happens. The main_page() function serves as the entry point, rendering the main page of the website with a Mapbox API key for map functionality. It requires user authentication to access.
+The create_itinerary() function is an endpoint that handles both the creation and retrieval of user itineraries. When accessed via GET, it fetches all itineraries for the current user, including associated places. For POST requests, it creates a new itinerary, ensuring no duplicates exist for the user. The add_pins_to_itinerary() function allows users to add pins to specific itineraries, while delete_itinerary() and edit_itinerary() provide functionality to remove or modify existing itineraries.  
 
-### Adding Pins
-1. The user clicks on the map or searches for a location.
-2. addPin function in JavaScript sends a POST request to /places.
-3. create_place function in views.py processes the request and creates a new Place object.
-3. The pin is added to the map and the database.  
+Pin management is handled by several functions. create_place() allows users to add new places or retrieve existing ones. It checks for duplicate places based on coordinates before adding new entries. The delete_place() and edit_place() functions provide options to remove or update place details, respectively. The pins contain the id, name, longitude, latitude, rating and review, and these pins are stored in the database. Lastly, the get_user_places() function retrieves all places associated with the current user, returning a comprehensive list of pin details and displaying it to the user. 
 
-
-### Managing Itineraries
-1. User creates an itinerary using the form in main_page.html.
-2. create_itinerary function sends a POST request to /itinerary.
-3. create_itinerary function in views.py creates a new Itinerary object.
-4. Pins can be added to itineraries using the add_to_itinerary function.  
-
+Throughout the code, proper error handling is implemented to manage scenarios such as missing data, unauthorized access, or non-existent records. The application utilizes Flask for routing and request handling, Flask-Login for user authentication, and SQLAlchemy ORM for database operations. This structure allows for a robust and maintainable web application focused on managing travel itineraries and places of interest.  
 
 ## Known Issues
 ### Minor Issues
 1. Cancelling an itinerary edit shows an unnecessary error message.
 2. Users cannot remove individual pins from an itinerary without deleting the entire itinerary.
-3. Sometimes, pin details do not pull up and have to refresh the page. 
+3. Sometimes, pin details do not pull up, and you have to refresh the page. 
 
 ### Major Issues
 There are no major breaking issues known at this time.

@@ -114,3 +114,10 @@ li {
   margin: 0;
   padding: 10px;
 }
+
+#refresh {
+  padding: 0;
+  margin: 0;
+  font-size: larger;
+  font-weight: bold;
+}

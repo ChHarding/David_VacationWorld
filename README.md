@@ -3,7 +3,10 @@
 ## Description
 TripPin is a web application that will allow you to map out places in the world that you have been to,
 ability to plan for your next vacation with different itineraries, provide ratings and reviews to
-different point-of-interests that users have visited. This app can also serve as a memory lane for users to remember their vacation.
+different point-of-interests that users have visited. This app can also serve as a memory lane for users to remember their vacation.  
+
+## Run online
+You may visit https://dtang.pythonanywhere.com/ to see a live version of the site to test it out.
 
 ## Installation and Run Locally
 

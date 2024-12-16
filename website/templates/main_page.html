@@ -21,29 +21,45 @@
   <body>
     <div id="map"></div>
     <div id="map-overlay">
+      <button id="logout" onclick="location.href='/logout'">Logout</button>
       <button id="zoom">Zoom In</button>
     </div>
     <div id="itinerary-panel">
       <h2>Itineraries</h2>
-      <div id="itinerary-list"></div>
+      <div id="itinerary-list">
+        <div id="pins-list"></div>
+      </div>
       <h3>Create New Itinerary</h3>
       <input
         type="text"
         id="new-itinerary-name"
         placeholder="Enter itinerary name"
       />
-      <button onclick="createItinerary()">Create Itinerary</button>
+      <button onclick="create_itinerary()">Create Itinerary</button>
     </div>
-    <div id="itinerary">
-      <h3>Trip Itinerary</h3>
-      <ul id="itinerary-list"></ul>
-      <button id="clear-itinerary">Clear Itinerary</button>
-      <button id="save-itinerary" onclick="saveItinerary()">
-        Save Itinerary
-      </button>
-      <button id="load-itinerary" onclick="loadItinerary()">
-        Load Itinerary
-      </button>
+    <div id="instructions">
+      <h1>TripPin Instructions</h1>
+      <ul>
+        <p id="refresh">
+          If something isn't working as expected, please refresh the site!
+        </p>
+          <li>Click anywhere on the map to add a new pin</li>
+          <li>
+            Click on a pin to view, edit, delete, or add it to an itinerary
+          </li>
+          <li>
+            Enter itinerary name and click "Create Itinerary" to create a new
+            itinerary
+          </li>
+          <li>
+            Click on the "Add To Itinerary" button to add the pin to the
+            itinerary of your choice
+          </li>
+          <li>Use the search bar to find a specific location</li>
+          <li>Click on the "Zoom In/Out" button to zoom in/out on the map</li>
+          <li>Click on the "Logout" button to log out</li>
+        </p>
+      </ul>
     </div>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
@@ -71,95 +87,154 @@
       searchBox.mapboxgl = mapboxgl;
       map.addControl(searchBox);
 
-      // Store all markers and itineraries in an array
-      let markers = [];
-      let itineraries = [];
+      let popup = new AnimatedPopup({
+        offset: 25,
+        openingAnimation: {
+          duration: 1000,
+          easing: "easeOutElastic",
+          transform: "scale",
+        },
+        closingAnimation: {
+          duration: 300,
+          easing: "easeInBack",
+          transform: "scale",
+        },
+      });
 
       // Function to add a pin
-      function addPin(lng, lat, title) {
-        const popupContent = `
-          <h3>${title}</h3>
-          <button onclick="editPinName(${markers.length})">Edit</button>
-          <button onclick="deletePin(${markers.length})">Delete</button>
-          <button onclick="addToItinerary(${lng}, ${lat}, '${title}')">Add to Itinerary</button>
-      `;
+      function add_pin(lng, lat, title, rating, review) {
+        if (rating == null || review == null) {
+          rating = parseInt(prompt("Enter a rating for this place (1-5): "));
+          if (rating > 5 || rating < 1 || rating.isNaN) {
+            alert(
+              "Error: Please enter a number between 1 and 5 for the rating"
+            );
+            return;
+          }
+          review = prompt("Enter a review for this place: ");
+        }
 
-        const popup = new AnimatedPopup({
-          offset: 25,
-          openingAnimation: {
-            duration: 1000,
-            easing: "easeOutElastic",
-            transform: "scale",
+        fetch("/places", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          closingAnimation: {
-            duration: 300,
-            easing: "easeInBack",
-            transform: "scale",
-          },
-        }).setHTML(popupContent);
-
-        //const popup = new mapboxgl.Popup().setHTML(popupContent);
-        const marker = new mapboxgl.Marker({
-          color: "#FF0000",
-          draggable: true,
+          body: JSON.stringify({
+            name: title,
+            longitude: lng,
+            latitude: lat,
+            rating: parseInt(rating),
+            review: review,
+          }),
         })
-          .setLngLat([lng, lat])
-          .setPopup(popup)
-          .addTo(map);
-
-        markers.push({ marker, title });
-        marker.togglePopup();
-        return marker;
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              console.error("Error:", data.error);
+              alert(data.error);
+              return;
+            } else {
+              console.log("Pin saved:", data);
+              const popupContent = `
+                        <h3>${title}</h3>
+                        <p>Rating: ${rating}/5</p>
+                        <p>Review: ${review}</p>
+                        <button onclick="edit_pin(${data.id})">Edit</button>
+                        <button onclick="delete_pin(${data.id})">Delete</button>
+                        <button onclick="add_to_itinerary(${data.id})">Add To Itinerary</button>
+                  `;
+              popup.setHTML(popupContent);
+              // Add marker to map and update UI
+              const marker = new mapboxgl.Marker({
+                color: "#FF0000",
+              })
+                .setLngLat([lng, lat])
+                .setPopup(popup)
+                .addTo(map);
+            }
+          })
+          .catch((error) => console.error("Error:", error));
       }
 
       // Function to edit pin name
-      function editPinName(index) {
-        const newTitle = prompt(
-          "Enter new name for this location:",
-          markers[index].title
-        );
-        if (newTitle) {
-          markers[index].title = newTitle;
-          const popupContent = `
-              <h3>${newTitle}</h3>
-              <button onclick="editPinName(${index})">Edit</button>
-              <button onclick="deletePin(${index})">Delete</button>
-          `;
-          markers[index].marker.getPopup().setHTML(popupContent);
+      function edit_pin(placeId) {
+        newTitle = prompt("Enter new name for this location:");
+        if (newTitle == null || newTitle == "") {
+          alert("Error: Please enter a name for the location");
+          return;
         }
+        newRating = prompt("Enter a new rating (1-5):");
+        Nested_if: if (newRating == null || newRating == "") {
+          newRating = "";
+          break Nested_if;
+          if (
+            parseInt(newRating) > 5 ||
+            parseInt(newRating) < 1 ||
+            Number.isNaN(parseInt(newRating))
+          ) {
+            alert(
+              "Error: Please enter a number between 1 and 5 for the rating"
+            );
+            return;
+          }
+        }
+
+        newReview = prompt("Enter a new review:");
+
+        fetch(`/places/${placeId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: newTitle,
+            rating: newRating,
+            review: newReview,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Place updated:", data);
+            window.location.reload();
+          })
+          .catch((error) => console.error("Error:", error));
       }
 
       // Function to delete pin
-      function deletePin(index) {
+      function delete_pin(placeId) {
         if (confirm("Are you sure you want to delete this pin?")) {
-          markers[index].marker.remove();
-          markers.splice(index, 1);
-          // Update remaining markers' popup content to reflect new indices
-          markers.forEach((marker, i) => {
-            const popupContent = `
-                  <h3>${marker.title}</h3>
-                  <button onclick="editPinName(${i})">Edit</button>
-                  <button onclick="deletePin(${i})">Delete</button>
-              `;
-            marker.marker.getPopup().setHTML(popupContent);
-          });
+          fetch(`/places/${placeId}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Place deleted:", data);
+              // Remove the marker from the map
+
+              // Refresh the places list
+              window.location.reload();
+            })
+            .catch((error) => console.error("Error:", error));
         }
       }
 
       // Example: Add some sample pins
       map.on("load", () => {
-        addPin(-74.006, 40.7128, "New York City");
-        addPin(2.3522, 48.8566, "Paris");
-        addPin(139.6917, 35.6895, "Tokyo");
+        add_pin(
+          -74.006,
+          40.7128,
+          "New York City",
+          4,
+          "Best City, but a lot of people"
+        );
+        add_pin(2.3522, 48.8566, "Paris", 5, "This is our honeymoon location!");
+        add_pin(139.6917, 35.6895, "Tokyo", 3, "Good fish");
       });
 
       // Add click event to add new pins
       map.on("click", (e) => {
         const title = prompt("Enter a name for this location:");
-        if (title) {
-          addPin(e.lngLat.lng, e.lngLat.lat, title);
-          //addToItinerary(e.lngLat.lng, e.lngLat.lat, title);
-        }
+        if (title) add_pin(e.lngLat.lng, e.lngLat.lat, title);
       });
 
       // Spin variables
@@ -243,56 +318,13 @@
 
       let itinerary = [];
 
-      function addToItinerary(lng, lat, title) {
-        itinerary.push({ lng, lat, title });
-        updateItineraryDisplay();
-      }
-
-      function updateItineraryDisplay() {
-        const list = document.getElementById("itinerary-list");
-        list.innerHTML = "";
-        itinerary.forEach((item, index) => {
-          const li = document.createElement("li");
-          li.textContent = `${index + 1}. ${item.title}`;
-          list.appendChild(li);
-        });
-      }
-
-      function clearItinerary() {
-        itinerary = [];
-        updateItineraryDisplay();
-      }
-
-      document
-        .getElementById("clear-itinerary")
-        .addEventListener("click", clearItinerary);
-
-      function saveItinerary() {
-        fetch("/save_itinerary", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(itinerary),
-        })
-          .then((response) => response.json())
-          .then((data) => console.log("Itinerary saved:", data));
-      }
-
-      function loadItinerary() {
-        fetch("/load_itinerary")
-          .then((response) => response.json())
-          .then((data) => {
-            itinerary = data;
-            updateItineraryDisplay();
-          });
-      }
-
-      // Call loadItinerary when the page loads
-      document.addEventListener("DOMContentLoaded", loadItinerary);
       // Create a new itinerary
-      function createItinerary() {
+      function create_itinerary() {
         const name = document.getElementById("new-itinerary-name").value;
+        if (!name) {
+          alert("Error: Please enter a name for the itinerary");
+          return;
+        }
         fetch("/itinerary", {
           method: "POST",
           headers: {
@@ -300,29 +332,41 @@
           },
           body: JSON.stringify({ name: name }),
         })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.id) {
-              itineraries.push({ id: data.id, name: name, locations: [] });
-              updateItineraryList();
-              document.getElementById("new-itinerary-name").value = "";
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((data) => {
+                throw new Error(data.error || "An error occurred");
+              });
             }
+            return response.json();
           })
-          .catch((error) => console.error("Error:", error));
+          .then((data) => updateItineraryList())
+          .catch((error) => {
+            console.error("Error:", error);
+            alert(`Error: ${error.message}`);
+          });
       }
 
       // Delete an itinerary
-      function deleteItinerary(itineraryId) {
-        fetch(`/itinerary/${itineraryId}`, {
-          method: "DELETE",
-        })
-          .then((response) => response.json())
-          .then((data) => console.log(data))
-          .catch((error) => console.error("Error:", error));
+      function delete_itinerary(itineraryId) {
+        if (confirm("Are you sure you want to delete this itinerary?")) {
+          fetch(`/itinerary/${itineraryId}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((data) => updateItineraryList())
+
+            .catch((error) => console.error("Error:", error));
+        }
       }
 
       // Edit an itinerary
-      function editItinerary(itineraryId, newName) {
+      function edit_itinerary(itineraryId) {
+        const newName = prompt("Enter a new name for this itinerary:");
+        if (!newName) {
+          alert("Error: Please enter a name for the itinerary");
+          return;
+        }
         fetch(`/itinerary/${itineraryId}`, {
           method: "PUT",
           headers: {
@@ -331,32 +375,132 @@
           body: JSON.stringify({ name: newName }),
         })
           .then((response) => response.json())
-          .then((data) => console.log(data))
+          .then((data) => updateItineraryList())
           .catch((error) => console.error("Error:", error));
       }
 
-      function updateItineraryList() {
-        const itineraryList = document.getElementById("itinerary-list");
-        itineraryList.innerHTML = "";
-        itineraries.forEach((itinerary) => {
-          const itineraryItem = document.createElement("div");
-          itineraryItem.className = "itinerary-item";
-          itineraryItem.innerHTML = `
-                    <h4>${itinerary.name}</h4>
-                    <button onclick="editItinerary(${itinerary.id})">Edit</button>
-                    <button onclick="deleteItinerary(${itinerary.id})">Delete</button>
-                `;
-          itineraryList.appendChild(itineraryItem);
-        });
+      function add_to_itinerary(placeId) {
+        const itineraryName = prompt(
+          "Enter the itinerary name to add this place to:"
+        );
+        if (!itineraryName) {
+          alert("Error: Please enter an itinerary name");
+          return;
+        }
+        fetch(`/itinerary/${itineraryName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ placeId: placeId }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((data) => {
+                throw new Error(data.error || "An error occurred");
+              });
+            }
+            return response.json();
+          })
+          .then((data) => updateItineraryList())
+          .catch((error) => {
+            console.error("Error:", error);
+            alert(`Error: ${error.message}`);
+          });
       }
 
-      // Load existing itineraries when the page loads
-      fetch("/itineraries")
-        .then((response) => response.json())
-        .then((data) => {
-          itineraries = data;
-          updateItineraryList();
-        });
+      function updateItineraryList() {
+        fetch("/itinerary", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((itineraries) => {
+            const itineraryList = document.getElementById("itinerary-list");
+            const pinsList = document.getElementById("pins-list");
+            itineraryList.innerHTML = "";
+
+            itineraries.forEach((itinerary) => {
+              const itineraryItem = document.createElement("div");
+              itineraryItem.className = "itinerary-item";
+              itineraryItem.innerHTML = `
+                        <h4>${itinerary.name}</h4>
+                        <h4>Pins:</h4>
+                        <ul>
+                    ${itinerary.place
+                      .map(
+                        (place) => `
+                        <li>
+                            ${place.name}
+                        </li>
+                    `
+                      )
+                      .join("")}
+                </ul>
+
+                        <button onclick="edit_itinerary(${
+                          itinerary.id
+                        })">Edit</button>
+                        <button onclick="delete_itinerary(${
+                          itinerary.id
+                        })">Delete</button>
+                    `;
+              itineraryList.appendChild(itineraryItem);
+            });
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      function loadUserPins() {
+        fetch("/places", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((places) => {
+            places.forEach((place) => {
+              const popup = new AnimatedPopup({
+                offset: 25,
+                openingAnimation: {
+                  duration: 1000,
+                  easing: "easeOutElastic",
+                  transform: "scale",
+                },
+                closingAnimation: {
+                  duration: 300,
+                  easing: "easeInBack",
+                  transform: "scale",
+                },
+              });
+              const popupContent = `
+                    <h3>${place.name}</h3>
+                    <p>Coordinates: ${place.longitude}, ${place.latitude}</p>
+                    <p>Rating: ${place.rating}/5</p>
+                    <p>Review: ${place.review}</p>
+                    <button onclick="edit_pin(${place.id})">Edit</button>
+                    <button onclick="delete_pin(${place.id})">Delete</button>
+                    <button onclick="add_to_itinerary(${place.id})">Add To Itinerary</button>
+                `;
+              popup.setHTML(popupContent);
+              // Add marker to map and update UI
+              const marker = new mapboxgl.Marker({
+                color: "#FF0000",
+              })
+                .setLngLat([place.longitude, place.latitude])
+                .setPopup(popup)
+                .addTo(map);
+            });
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Call loadUserPins when the page loads
+      document.addEventListener("DOMContentLoaded", loadUserPins);
+      document.addEventListener("DOMContentLoaded", updateItineraryList);
     </script>
   </body>
 </html>
